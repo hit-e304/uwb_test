@@ -22,7 +22,7 @@ def data_ctr(a):
     return True
 
 def read_data(a):
-    global_dis = np.zeros([5, 5])
+    global_dis = np.zeros([num_flight, num_flight])
     decay = 0
 
     for k in range(a[15]):
@@ -33,13 +33,17 @@ def read_data(a):
         dis[id0] = d
         decay += info_len
 
-    for key in dis:
-        global_dis[self_num][key] = dis[key]
+        for key in dis:
+            global_dis[self_num][key] = dis[key]
 
     return dis, global_dis
 
-def send_data(distance):
-    str_dis = []
+def send_data(global_dis):
+    str_dis = []    
+
+    for i in range(num_flight):
+        str_dis += global_dis[self_num][i]
+
     send_dis = ",".join(str_dis)
     ser.write((send_dis +'\n').encode())
 
@@ -50,3 +54,4 @@ while True:
             break
 
         distance, global_distance = read_data(a)
+        send_data(global_distance)
