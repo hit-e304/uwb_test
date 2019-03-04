@@ -1,6 +1,7 @@
 import time
 import serial
 import numpy as np
+
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--portx', type=str, default='COM3')
@@ -74,6 +75,10 @@ def read_data(a):
                 global_dis[id0][i] = float(info[i])
             else:
                 global_dis[id0][i+1] = float(info[i])
+        
+        if global_dis.max() > 100:
+            con_sign = False
+            return global_dis, con_sign
             
         dis[id0] = d
         decay += info_len
@@ -95,7 +100,9 @@ def send_data(global_dis):
 if __name__ == '__main__':
     
     while True:
+        start_time = time.time()
         if ser.in_waiting:
+
             a = ser.read(ser.in_waiting)
             a_sign = data_ctr(a)
             if not a_sign:
@@ -103,11 +110,15 @@ if __name__ == '__main__':
                 continue
 
             global_distance, continue_sign = read_data(a)
+    
             if not continue_sign:
                 print('data_error')
                 continue
-
+            
             send_data(global_distance)
             print(global_distance)
+            print(time.time() - start_time)        
+
+
     
     ser.close()
