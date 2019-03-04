@@ -2,7 +2,7 @@ import serial
 import numpy as np
 import math
 
-serialPort="COM4"
+serialPort="COM3"
 baudRate = 921600
 ser=serial.Serial(serialPort,baudRate,timeout=0.5)  
 
