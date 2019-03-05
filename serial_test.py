@@ -10,8 +10,7 @@ args = parser.parse_args()
 
 portx = args.portx
 bps = 921600
-timex = 10
-# self_num = 0
+timex = 5
 num_flight = args.num
 str_dis = []
 ser = serial.Serial(portx, bps, timeout=timex)
