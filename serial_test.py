@@ -5,15 +5,14 @@ import numpy as np
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--portx', type=str, default='COM3')
-parser.add_argument('--num', type=int, default=2)
+parser.add_argument('--num', type=int, default=4)
 args = parser.parse_args()
 
 portx = args.portx
 bps = 921600
-timex = 5
-self_num = 0
+timex = 10
+# self_num = 0
 num_flight = args.num
-dis = {}
 str_dis = []
 ser = serial.Serial(portx, bps, timeout=timex)
 
@@ -33,6 +32,48 @@ def is_number(s):
  
     return False
 
+def read_byte():
+    read_flag = 0
+    out_a = []
+    while read_flag in [0, 1]:
+        read_byte = ser.read()[0]
+        if read_byte == 85:
+            read_flag += 1
+        if read_flag == 1:
+            out_a.append(read_byte)
+    return out_a
+
+def init_data():
+    init_flag = False
+    dis = {}
+    global_dis = np.zeros([num_flight, num_flight])
+
+    while not init_flag:
+        a = read_byte()
+        if len(a) < 16 * num_flight:
+            print('init erro: wrong length', len(a))
+            continue
+        if a[15] != num_flight - 1:
+            print('init error: not enough target')
+            continue
+        else:
+            self_num = a[2]
+
+            for k in range(a[15]):
+                id0 = a[16 * (k+1)]
+                d = (65536 * a[16 * (k+1) + 3] + a[16 * (k+1) + 2] * 256 + a[16 * (k+1) + 1]) / 1000
+                dis[id0] = d
+            for key in dis:
+                global_dis[self_num][key] = dis[key]
+
+            init_flag = True
+    
+    print('finish init')
+
+    return self_num, global_dis, init_flag
+
+
+
 def data_ctr(a):
     if len(a) < 16 or len(a) < (a[15]+1) * 16:
         print('wrong data')
@@ -42,10 +83,10 @@ def data_ctr(a):
         return False
     return True
 
-def read_data(a):
-    global_dis = np.zeros([num_flight, num_flight])
+def read_data(a, global_dis):
     decay = 0
     con_sign = True
+    dis = {}
 
     if a[15] != (num_flight - 1):
         con_sign = False
@@ -59,9 +100,7 @@ def read_data(a):
             con_sign = False
             return global_dis, con_sign
 
-        info_get = a[(32 + 16 * k + decay) : (32 + 16 * k + decay + info_len)].decode()
-        info_get = info_get.replace('\n', '')
-        info = info_get.split(',')
+        info = a[(32 + 16 * k + decay) : (32 + 16 * k + decay + info_len)]
         if len(info) == 0:
             con_sign = False
             return global_dis, con_sign
@@ -98,27 +137,25 @@ def send_data(global_dis):
     ser.write((send_dis +'\n').encode())
 
 if __name__ == '__main__':
+
+    self_num, global_distance, init_flag = init_data()
     
-    while True:
+    while init_flag:
         start_time = time.time()
-        if ser.in_waiting:
+        send_data(global_distance)
 
-            a = ser.read(ser.in_waiting)
-            a_sign = data_ctr(a)
-            if not a_sign:
-                print('a_error')
-                continue
+        a = read_byte()
+        a_sign = data_ctr(a)
+        if not a_sign:
+            continue
 
-            global_distance, continue_sign = read_data(a)
-    
-            if not continue_sign:
-                print('data_error')
-                continue
-            
-            send_data(global_distance)
-            print(global_distance)
-            print(time.time() - start_time)        
+        global_distance, continue_sign = read_data(a, global_distance)
 
-
+        # if not continue_sign:
+        #     print('data_error')
+        #     continue
+        
+        send_data(global_distance)
+        print(global_distance)
     
     ser.close()

@@ -1,7 +1,7 @@
 import time
 import serial
 
-portx = "COM5"
+portx = "COM4"
 bps = 921600
 timex = 5
 
@@ -20,11 +20,15 @@ def ReadData(ser):
                 continue
             print("%i tags found" % a[15])
 
+            decay = 0
+
             for k in range(a[15]):
-                id0 = a[16 * (k+1)]
-                d = (65536 * a[16 * (k+1) + 3] + a[16 * (k+1) + 2] * 256 + a[16 * (k+1) + 1]) / 1000
+                id0 = a[16 * (k+1) + decay]
+                d = (65536 * a[16 * (k+1) + 3 + decay] + a[16 * (k+1) + 2 + decay] * 256 + a[16 * (k+1) + 1 + decay]) / 1000
+                info_len = a[30 + 16 * k + decay]
                 print(" the %i tag is %f away" % (id0, d))
                 str_dis.append(str(d))
+                decay += info_len
 
             send_dis = ",".join(str_dis)
             ser.write((send_dis +'\n').encode())
