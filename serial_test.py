@@ -119,6 +119,4 @@ if __name__ == '__main__':
             print(global_distance)
             print(time.time() - start_time)        
 
-
-    
     ser.close()
