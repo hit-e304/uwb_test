@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import pdb as ipdb
 
 n = 5
 
@@ -13,7 +14,7 @@ x = x0 + np.random.rand(n) *  lam
 y = y0 + np.random.rand(n) *  lam
 z = z0 + np.random.rand(n) *  lam
 
-### test whether the last point have much influnce ###
+### test whether the last point have more influnce ###
 # x[-1] += np.random.rand(1)
 # y[-1] += np.random.rand(1)
 # z[-1] += np.random.rand(1)
@@ -37,6 +38,8 @@ for i in range(n-2):
 A = np.mat(A)
 b = np.mat(b)
 X = (A.T * A).I * A.T * b.T
+
+ipdb.set_trace()
 
 print("Test with %i points" % n)
 print("Lamda of noise %f " % lam)
